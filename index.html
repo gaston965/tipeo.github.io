@@ -9,11 +9,21 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
+            padding-bottom: 16rem; /* Aumentado para evitar que el contenido se superponga con el footer en modo apaisado */
         }
         
         .readable-content {
             white-space: pre-wrap;
             word-wrap: break-word;
+        }
+
+        @media (orientation: landscape) {
+            #readonly-section #timer-display {
+                position: fixed;
+                bottom: 1rem;
+                left: 50%;
+                transform: translateX(-50%);
+            }
         }
     </style>
 </head>
@@ -28,7 +38,7 @@
             <div class="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0 md:space-x-4">
                 <label for="pdf-upload" class="flex-1 w-full md:w-auto cursor-pointer bg-blue-500 text-white font-semibold py-3 px-6 rounded-xl text-center hover:bg-blue-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2 transition-colors duration-200">
                     Subir PDF
-                    <input type="file" id="pdf-upload" class="hidden" accept=".pdf">
+                <input type="file" id="pdf-upload" class="hidden" accept=".pdf">
                 </label>
                 <button id="clear-button" class="flex-1 w-full md:w-auto bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold py-3 px-6 rounded-xl hover:bg-gray-400 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200">
                     Limpiar Texto
@@ -81,10 +91,18 @@
             Desbloquear
         </button>
     </div>
-	
-  
-   
     
+    <footer class="fixed bottom-0 left-0 w-full bg-gray-900 text-white text-center p-4 text-sm flex items-center justify-center space-x-2">
+        <a href="https://www.instagram.com/gaston_965" target="_blank" class="flex items-center space-x-1 hover:text-gray-400 transition-colors duration-200">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-instagram">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                <line x1="17.5" y1="6.5" x2="17.5" y2="6.5"></line>
+            </svg>
+            <span>gaston_965</span>
+        </a>
+    </footer>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script>
         // Get references to all the necessary DOM elements
@@ -302,11 +320,4 @@
         
     </script>
 </body>
-	  <footer>
-          <a>  <span>gaston_965</span> </a>
-	 </footer>
 </html>
-
-
-
-
