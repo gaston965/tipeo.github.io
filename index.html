@@ -285,12 +285,13 @@
         // --- Nuevo Código para ocultar/mostrar el pie de página ---
         // Función para manejar los cambios de orientación
         function handleOrientationChange() {
-            const mediaQuery = window.matchMedia("(orientation: landscape)");
+            // Media query para verificar la orientación apaisada en pantallas pequeñas (móviles)
+            const mediaQuery = window.matchMedia("(orientation: landscape) and (max-width: 767px)");
             if (mediaQuery.matches) {
-                // Modo apaisado
+                // Modo apaisado en celular
                 footer.classList.add('hidden');
             } else {
-                // Modo vertical
+                // Modo vertical o en pantallas grandes (PC)
                 footer.classList.remove('hidden');
             }
         }
