@@ -9,7 +9,6 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            padding-bottom: 16rem; /* Aumentado para evitar que el contenido se superponga con el footer en modo apaisado */
         }
         
         .readable-content {
@@ -17,15 +16,13 @@
             word-wrap: break-word;
         }
 
+        /* En modo apaisado, asegura que el contador esté en una posición fija */
         @media (orientation: landscape) {
             #readonly-section #timer-display {
                 position: fixed;
                 bottom: 1rem;
                 left: 50%;
                 transform: translateX(-50%);
-            }
-            .hide-on-landscape {
-                display: none;
             }
         }
     </style>
@@ -95,7 +92,16 @@
         </button>
     </div>
     
-  
+    <footer id="main-footer" class="fixed bottom-0 left-0 w-full bg-gray-900 text-white text-center p-4 text-sm flex items-center justify-center space-x-2">
+        <a href="https://www.instagram.com/gaston_965" target="_blank" class="flex items-center space-x-1 hover:text-gray-400 transition-colors duration-200">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-instagram">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                <line x1="17.5" y1="6.5" x2="17.5" y2="6.5"></line>
+            </svg>
+            <span>gaston_965</span>
+        </a>
+    </footer>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script>
@@ -114,7 +120,8 @@
         const clearButton = document.getElementById('clear-button');
         const wordCountDiv = document.getElementById('word-count');
         const wordCountDisplay = document.getElementById('word-count-display');
-        
+        const footer = document.getElementById('main-footer');
+
         // Timer variables to store the timeout and interval IDs
         let timer = null;
         let countdownInterval = null;
@@ -125,40 +132,30 @@
 
         // Function to show the lock screen
         function showLockScreen() {
-            // Clear any existing timers
             if (timer) clearTimeout(timer);
             if (countdownInterval) clearInterval(countdownInterval);
             
-            // Add classes to make the lock screen visible and interactive
             lockScreen.classList.remove('opacity-0', 'pointer-events-none');
             lockScreen.classList.add('opacity-100', 'pointer-events-auto');
         }
         
         // Function to show the full-screen readonly section
         function showReadonlyScreen() {
-            // Hide the main app UI
             appContainer.classList.add('hidden');
-            
-            // Populate the readonly textarea and show the section
             readonlyContentTextArea.value = contentTextArea.value;
             readonlySection.classList.remove('hidden');
         }
 
         // Function to hide the lock screen and readonly section
         function hideAllScreens() {
-            // Hide the lock screen
             lockScreen.classList.remove('opacity-100', 'pointer-events-auto');
             lockScreen.classList.add('opacity-0', 'pointer-events-none');
-            
-            // Hide the readonly section
             readonlySection.classList.add('hidden');
-            
-            // Show the main app UI
             appContainer.classList.remove('hidden');
-            
-            // Reset the start button text and state
             startButton.textContent = 'Iniciar Temporizador y Bloquear';
             startButton.disabled = false;
+            // Mostrar el footer al desbloquear la pantalla
+            footer.classList.remove('hidden');
         }
 
         // Function to count words and update the display
@@ -175,11 +172,9 @@
         // Function to extract text from a PDF file
         async function extractTextFromPDF(file) {
             try {
-                // Show loading message
                 contentTextArea.value = "Extrayendo texto del PDF... Esto podría tardar unos segundos.";
                 wordCountDiv.classList.add('hidden');
 
-                // Use FileReader to read the PDF file as an ArrayBuffer
                 const arrayBuffer = await new Promise((resolve, reject) => {
                     const reader = new FileReader();
                     reader.onload = () => resolve(reader.result);
@@ -187,14 +182,12 @@
                     reader.readAsArrayBuffer(file);
                 });
 
-                // Load the PDF document
                 const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
                 let fullText = '';
-                let lastY = 0; // Vertical position of the previous text item
-                let lastX = 0; // Horizontal position of the previous text item
-                let lastWidth = 0; // Width of the previous text item
+                let lastY = 0;
+                let lastX = 0;
+                let lastWidth = 0;
 
-                // Iterate over all pages and extract text
                 for (let i = 1; i <= pdf.numPages; i++) {
                     const page = await pdf.getPage(i);
                     const textContent = await page.getTextContent();
@@ -202,81 +195,60 @@
                     textContent.items.forEach(item => {
                         const currentY = item.transform[5];
                         const currentX = item.transform[4];
-
-                        // Check for significant vertical change (new line)
                         if (lastY > 0 && Math.abs(lastY - currentY) > 10) {
-                            fullText += '\n'; // Newline
+                            fullText += '\n';
                         } else if (lastX > 0) {
-                            // Check for horizontal spacing (new word vs. new character)
                             const gap = currentX - (lastX + lastWidth);
-                            if (gap > 5) { // Heuristic value for space between words
+                            if (gap > 5) {
                                 fullText += ' ';
                             }
                         }
-                        
                         fullText += item.str;
                         lastY = currentY;
                         lastX = currentX;
                         lastWidth = item.width;
                     });
-                    fullText += '\n'; // Newline at the end of each page
-                    lastY = 0; // Reset lastY for the new page
-                    lastX = 0; // Reset lastX for the new page
-                    lastWidth = 0; // Reset lastWidth for the new page
+                    fullText += '\n';
+                    lastY = 0;
+                    lastX = 0;
+                    lastWidth = 0;
                 }
-
-                // Update text areas with the extracted text
                 contentTextArea.value = fullText.trim();
-                
-                // Update word count
                 updateWordCount(fullText);
-
             } catch (error) {
-                // Handle any errors during extraction
                 contentTextArea.value = `Error al extraer texto del PDF: ${error.message}`;
                 wordCountDiv.classList.add('hidden');
             }
         }
-        
+
         // Event listener for the start button
         startButton.addEventListener('click', () => {
-            // Clear any existing timers to prevent multiple timers from running
             if (timer) clearTimeout(timer);
             if (countdownInterval) clearInterval(countdownInterval);
             
-            // Show the full-screen readonly view
             showReadonlyScreen();
+            footer.classList.add('hidden'); // Ocultar el footer al presionar el botón
 
-            // Get the value from the timer input and convert it to milliseconds
             const minutes = parseInt(timerInput.value, 10);
             const milliseconds = minutes * 60 * 1000;
             
-            // Check if the input is a valid positive number
             if (minutes > 0) {
                 const endTime = Date.now() + milliseconds;
 
-                // Update the countdown every second
                 countdownInterval = setInterval(() => {
                     const remainingTime = endTime - Date.now();
                     
                     if (remainingTime <= 0) {
-                        // Time is up, show the lock screen
                         showLockScreen();
                     } else {
-                        // Calculate minutes and seconds
                         const remainingMinutes = Math.floor(remainingTime / 60000);
                         const remainingSeconds = Math.floor((remainingTime % 60000) / 1000);
-                        
-                        // Format the time with leading zeros
                         const secondsPadded = String(remainingSeconds).padStart(2, '0');
                         countdownSpan.textContent = `${remainingMinutes}:${secondsPadded}`;
                     }
                 }, 1000);
                 
-                // Set the main timer to trigger the lock screen at the end
                 timer = setTimeout(showLockScreen, milliseconds);
-                
-                // Provide user feedback that the timer has started
                 startButton.textContent = `Temporizador iniciado`;
                 startButton.disabled = true;
             }
@@ -285,8 +257,6 @@
         // Event listener for the unlock button on the lock screen
         unlockButton.addEventListener('click', () => {
             hideAllScreens();
-            
-            // Clear the countdown interval
             if (countdownInterval) clearInterval(countdownInterval);
         });
 
@@ -312,7 +282,27 @@
             wordCountDiv.classList.add('hidden');
         });
         
+        // --- Nuevo Código para ocultar/mostrar el pie de página ---
+        // Función para manejar los cambios de orientación
+        function handleOrientationChange() {
+            const mediaQuery = window.matchMedia("(orientation: landscape)");
+            if (mediaQuery.matches) {
+                // Modo apaisado
+                footer.classList.add('hidden');
+            } else {
+                // Modo vertical
+                footer.classList.remove('hidden');
+            }
+        }
+
+        // Llamar a la función al cargar la página para establecer el estado inicial
+        handleOrientationChange();
+
+        // Escuchar cambios de orientación en el dispositivo
+        window.addEventListener("orientationchange", handleOrientationChange);
+
+        // Si la API de `orientationchange` no está disponible, usar el listener de `matchMedia`
+        window.matchMedia("(orientation: landscape)").addEventListener("change", handleOrientationChange);
     </script>
 </body>
 </html>
-
