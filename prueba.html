@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bloqueo de Contenido</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .readable-content {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 flex items-center justify-center min-h-screen p-4 transition-colors duration-300">
+    <!-- Main App Container -->
+    <div id="app" class="w-full max-w-4xl bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden p-6 relative transition-all duration-500 transform scale-100 opacity-100">
+        <!-- Content section for the app -->
+        <div id="content" class="space-y-6">
+            <h1 class="text-3xl font-bold text-center text-gray-900 dark:text-gray-100">Bloqueo de Contenido</h1>
+            
+            <!-- File and Clear Section -->
+            <div class="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0 md:space-x-4">
+                <label for="pdf-upload" class="flex-1 w-full md:w-auto cursor-pointer bg-blue-500 text-white font-semibold py-3 px-6 rounded-xl text-center hover:bg-blue-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2 transition-colors duration-200">
+                    Subir PDF
+                    <input type="file" id="pdf-upload" class="hidden" accept=".pdf">
+                </label>
+                <button id="clear-button" class="flex-1 w-full md:w-auto bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold py-3 px-6 rounded-xl hover:bg-gray-400 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200">
+                    Limpiar Texto
+                </button>
+            </div>
+            
+            <!-- Text Input Area -->
+            <div class="space-y-2">
+                <label for="content-text" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Pega tu texto aquí</label>
+                <textarea id="content-text" placeholder="Copia y pega un texto o el contenido de un PDF." class="w-full h-48 p-4 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 resize-none"></textarea>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Pega texto directamente o sube un PDF para extraer su contenido.</p>
+            </div>
+
+            <!-- Word Count Display -->
+            <div id="word-count" class="text-center text-sm font-medium text-gray-700 dark:text-gray-300 hidden">
+                Cantidad de palabras: <span id="word-count-display">0</span>
+            </div>
+
+            <!-- Timer Input Section -->
+            <div class="space-y-2">
+                <label for="timer-minutes" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Duración del temporizador (minutos)</label>
+                <input type="number" id="timer-minutes" value="1" min="1" class="w-full p-4 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200">
+            </div>
+
+            <!-- Start Button -->
+            <button id="start-button" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200">
+                Iniciar Temporizador y Bloquear
+            </button>
+        </div>
+    </div>
+    
+    <!-- Full-screen Read-only Section (hidden by default) -->
+    <div id="readonly-section" class="fixed inset-0 bg-white dark:bg-gray-800 hidden flex flex-col p-8 md:p-12 transition-all duration-500 ease-in-out">
+        <textarea id="readonly-content" readonly class="flex-1 w-full h-auto p-4 rounded-xl border-none bg-transparent text-gray-900 dark:text-gray-100 overflow-y-auto resize-none text-base md:text-lg lg:text-xl leading-relaxed"></textarea>
+        
+        <!-- Timer Display within the fullscreen view -->
+        <div id="timer-display" class="text-center text-2xl font-semibold text-gray-700 dark:text-gray-300 mt-6">
+            Tiempo restante: <span id="countdown"></span>
+        </div>
+    </div>
+
+    <!-- Lock Screen Overlay -->
+    <div id="lock-screen" class="absolute inset-0 bg-gray-900 rounded-2xl flex items-center justify-center flex-col space-y-4 opacity-0 pointer-events-none transition-opacity duration-500">
+        <svg class="w-16 h-16 text-red-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+        </svg>
+        <h2 class="text-2xl font-bold text-gray-100 text-center">Pantalla Bloqueada</h2>
+        <p class="text-sm text-gray-300 text-center">El temporizador ha terminado. Haz clic para desbloquear.</p>
+        <button id="unlock-button" class="bg-gray-700 text-gray-100 font-bold py-2 px-6 rounded-xl hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200">
+            Desbloquear
+        </button>
+    </div>
+	    <footer class="fixed bottom-0 left-0 w-full bg-gray-900 text-white text-center p-4 text-sm flex items-center justify-center space-x-2">
+        <a href="https://www.instagram.com/gaston_965" target="_blank" class="flex items-center space-x-1 hover:text-gray-400 transition-colors duration-200">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-instagram">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                <line x1="17.5" y1="6.5" x2="17.5" y2="6.5"></line>
+            </svg>
+            <span>gaston_965</span>
+        </a>
+    </footer>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>
+        // Get references to all the necessary DOM elements
+        const startButton = document.getElementById('start-button');
+        const unlockButton = document.getElementById('unlock-button');
+        const timerInput = document.getElementById('timer-minutes');
+        const lockScreen = document.getElementById('lock-screen');
+        const appContainer = document.getElementById('app');
+        const timerDisplay = document.getElementById('timer-display');
+        const countdownSpan = document.getElementById('countdown');
+        const pdfUploadInput = document.getElementById('pdf-upload');
+        const contentTextArea = document.getElementById('content-text');
+        const readonlyContentTextArea = document.getElementById('readonly-content');
+        const readonlySection = document.getElementById('readonly-section');
+        const clearButton = document.getElementById('clear-button');
+        const wordCountDiv = document.getElementById('word-count');
+        const wordCountDisplay = document.getElementById('word-count-display');
+        
+        // Timer variables to store the timeout and interval IDs
+        let timer = null;
+        let countdownInterval = null;
+        
+        // --- PDF.js Configuration ---
+        const pdfjsLib = window['pdfjs-dist/build/pdf'];
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+        // Function to show the lock screen
+        function showLockScreen() {
+            // Clear any existing timers
+            if (timer) clearTimeout(timer);
+            if (countdownInterval) clearInterval(countdownInterval);
+            
+            // Add classes to make the lock screen visible and interactive
+            lockScreen.classList.remove('opacity-0', 'pointer-events-none');
+            lockScreen.classList.add('opacity-100', 'pointer-events-auto');
+        }
+        
+        // Function to show the full-screen readonly section
+        function showReadonlyScreen() {
+            // Hide the main app UI
+            appContainer.classList.add('hidden');
+            
+            // Populate the readonly textarea and show the section
+            readonlyContentTextArea.value = contentTextArea.value;
+            readonlySection.classList.remove('hidden');
+        }
+
+        // Function to hide the lock screen and readonly section
+        function hideAllScreens() {
+            // Hide the lock screen
+            lockScreen.classList.remove('opacity-100', 'pointer-events-auto');
+            lockScreen.classList.add('opacity-0', 'pointer-events-none');
+            
+            // Hide the readonly section
+            readonlySection.classList.add('hidden');
+            
+            // Show the main app UI
+            appContainer.classList.remove('hidden');
+            
+            // Reset the start button text and state
+            startButton.textContent = 'Iniciar Temporizador y Bloquear';
+            startButton.disabled = false;
+        }
+
+        // Function to count words and update the display
+        function updateWordCount(text) {
+            const words = text.trim().split(/\s+/).filter(word => word.length > 0);
+            wordCountDisplay.textContent = words.length;
+            if (words.length > 0) {
+                wordCountDiv.classList.remove('hidden');
+            } else {
+                wordCountDiv.classList.add('hidden');
+            }
+        }
+
+        // Function to extract text from a PDF file
+        async function extractTextFromPDF(file) {
+            try {
+                // Show loading message
+                contentTextArea.value = "Extrayendo texto del PDF... Esto podría tardar unos segundos.";
+                wordCountDiv.classList.add('hidden');
+
+                // Use FileReader to read the PDF file as an ArrayBuffer
+                const arrayBuffer = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsArrayBuffer(file);
+                });
+
+                // Load the PDF document
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                let fullText = '';
+                let lastY = 0; // Vertical position of the previous text item
+                let lastX = 0; // Horizontal position of the previous text item
+                let lastWidth = 0; // Width of the previous text item
+
+                // Iterate over all pages and extract text
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    
+                    textContent.items.forEach(item => {
+                        const currentY = item.transform[5];
+                        const currentX = item.transform[4];
+
+                        // Check for significant vertical change (new line)
+                        if (lastY > 0 && Math.abs(lastY - currentY) > 10) {
+                            fullText += '\n'; // Newline
+                        } else if (lastX > 0) {
+                            // Check for horizontal spacing (new word vs. new character)
+                            const gap = currentX - (lastX + lastWidth);
+                            if (gap > 5) { // Heuristic value for space between words
+                                fullText += ' ';
+                            }
+                        }
+                        
+                        fullText += item.str;
+                        lastY = currentY;
+                        lastX = currentX;
+                        lastWidth = item.width;
+                    });
+                    fullText += '\n'; // Newline at the end of each page
+                    lastY = 0; // Reset lastY for the new page
+                    lastX = 0; // Reset lastX for the new page
+                    lastWidth = 0; // Reset lastWidth for the new page
+                }
+
+                // Update text areas with the extracted text
+                contentTextArea.value = fullText.trim();
+                
+                // Update word count
+                updateWordCount(fullText);
+
+            } catch (error) {
+                // Handle any errors during extraction
+                contentTextArea.value = `Error al extraer texto del PDF: ${error.message}`;
+                wordCountDiv.classList.add('hidden');
+            }
+        }
+        
+        // Event listener for the start button
+        startButton.addEventListener('click', () => {
+            // Clear any existing timers to prevent multiple timers from running
+            if (timer) clearTimeout(timer);
+            if (countdownInterval) clearInterval(countdownInterval);
+            
+            // Show the full-screen readonly view
+            showReadonlyScreen();
+
+            // Get the value from the timer input and convert it to milliseconds
+            const minutes = parseInt(timerInput.value, 10);
+            const milliseconds = minutes * 60 * 1000;
+            
+            // Check if the input is a valid positive number
+            if (minutes > 0) {
+                const endTime = Date.now() + milliseconds;
+
+                // Update the countdown every second
+                countdownInterval = setInterval(() => {
+                    const remainingTime = endTime - Date.now();
+                    
+                    if (remainingTime <= 0) {
+                        // Time is up, show the lock screen
+                        showLockScreen();
+                    } else {
+                        // Calculate minutes and seconds
+                        const remainingMinutes = Math.floor(remainingTime / 60000);
+                        const remainingSeconds = Math.floor((remainingTime % 60000) / 1000);
+                        
+                        // Format the time with leading zeros
+                        const secondsPadded = String(remainingSeconds).padStart(2, '0');
+                        countdownSpan.textContent = `${remainingMinutes}:${secondsPadded}`;
+                    }
+                }, 1000);
+                
+                // Set the main timer to trigger the lock screen at the end
+                timer = setTimeout(showLockScreen, milliseconds);
+                
+                // Provide user feedback that the timer has started
+                startButton.textContent = `Temporizador iniciado`;
+                startButton.disabled = true;
+            }
+        });
+        
+        // Event listener for the unlock button on the lock screen
+        unlockButton.addEventListener('click', () => {
+            hideAllScreens();
+            
+            // Clear the countdown interval
+            if (countdownInterval) clearInterval(countdownInterval);
+        });
+
+        // Event listener for PDF file upload
+        pdfUploadInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                extractTextFromPDF(file);
+            }
+        });
+
+        // Event listener for manual text input
+        contentTextArea.addEventListener('input', (event) => {
+            const text = event.target.value;
+            updateWordCount(text);
+        });
+
+        // Event listener for the clear button
+        clearButton.addEventListener('click', () => {
+            contentTextArea.value = '';
+            readonlyContentTextArea.value = '';
+            readonlySection.classList.add('hidden');
+            wordCountDiv.classList.add('hidden');
+        });
+        
+    </script>
+</body>
+</html>
