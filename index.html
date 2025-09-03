@@ -227,7 +227,11 @@
             if (countdownInterval) clearInterval(countdownInterval);
             
             showReadonlyScreen();
-            footer.classList.add('hidden'); // Ocultar el footer al presionar el botón
+            
+            // Oculta el footer si la orientación es apaisada
+            if (window.matchMedia("(orientation: landscape) and (max-width: 767px)").matches) {
+                footer.classList.add('hidden');
+            }
 
             const minutes = parseInt(timerInput.value, 10);
             const milliseconds = minutes * 60 * 1000;
@@ -282,29 +286,21 @@
             wordCountDiv.classList.add('hidden');
         });
         
-        // --- Nuevo Código para ocultar/mostrar el pie de página ---
-        // Función para manejar los cambios de orientación
-        function handleOrientationChange() {
-            // Media query para verificar la orientación apaisada en pantallas pequeñas (móviles)
-            const mediaQuery = window.matchMedia("(orientation: landscape) and (max-width: 767px)");
-            if (mediaQuery.matches) {
-                // Modo apaisado en celular
+        // --- Lógica para manejar el footer en modo apaisado ---
+        function handleFooterVisibility() {
+            if (window.matchMedia("(orientation: landscape) and (max-width: 767px)").matches) {
                 footer.classList.add('hidden');
             } else {
-                // Modo vertical o en pantallas grandes (PC)
                 footer.classList.remove('hidden');
             }
         }
 
-        // Llamar a la función al cargar la página para establecer el estado inicial
-        handleOrientationChange();
+        // Se ejecuta al cargar la página
+        handleFooterVisibility();
 
-        // Escuchar cambios de orientación en el dispositivo
-        window.addEventListener("orientationchange", handleOrientationChange);
-
-        // Si la API de `orientationchange` no está disponible, usar el listener de `matchMedia`
-        window.matchMedia("(orientation: landscape)").addEventListener("change", handleOrientationChange);
+        // Se ejecuta cada vez que el tamaño o la orientación cambian
+        window.addEventListener("resize", handleFooterVisibility);
+        window.addEventListener("orientationchange", handleFooterVisibility);
     </script>
 </body>
 </html>
-
