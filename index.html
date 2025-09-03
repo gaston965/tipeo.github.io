@@ -92,8 +92,8 @@
         </button>
     </div>
     
-    <footer id="main-footer" class="fixed bottom-0 left-0 w-full bg-gray-900 text-white text-center p-1 text-sm flex items-center justify-center space-x-2">
-        <a href="https://www.instagram.com/gaston_965" target="_blank" class="flex items-center space-x-1 hover:text-gray-400 transition-colors duration-200">
+    <footer id="main-footer" class="fixed bottom-0 left-0 w-full bg-gray-900 text-white text-center p-4 text-sm">
+        <a href="https://www.instagram.com/gaston_965" target="_blank" class="flex items-center justify-center space-x-1 hover:text-gray-400 transition-colors duration-200">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-instagram">
                 <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
                 <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
@@ -144,6 +144,8 @@
             appContainer.classList.add('hidden');
             readonlyContentTextArea.value = contentTextArea.value;
             readonlySection.classList.remove('hidden');
+            // Oculta el footer cuando se muestra la sección de solo lectura
+            footer.style.display = 'none';
         }
 
         // Function to hide the lock screen and readonly section
@@ -154,8 +156,10 @@
             appContainer.classList.remove('hidden');
             startButton.textContent = 'Iniciar Temporizador y Bloquear';
             startButton.disabled = false;
-            // Mostrar el footer al desbloquear la pantalla
-            footer.classList.remove('hidden');
+            // Muestra el footer al desbloquear la pantalla
+            footer.style.display = 'block';
+            // Vuelve a aplicar la lógica de orientación para el footer
+            handleOrientationChange();
         }
 
         // Function to count words and update the display
@@ -221,6 +225,19 @@
             }
         }
 
+        // Function to handle footer visibility based on orientation and screen width
+        function handleOrientationChange() {
+            // Solo aplica esta lógica si la sección de solo lectura no está visible
+            if (readonlySection.classList.contains('hidden')) {
+                // Oculta el footer solo si la orientación es apaisada y el ancho de la ventana es menor a 768px (pantalla de tablet/móvil)
+                if (window.matchMedia("(orientation: landscape)").matches && window.innerWidth < 768) {
+                    footer.style.display = 'none';
+                } else {
+                    footer.style.display = 'block';
+                }
+            }
+        }
+
         // Event listener for the start button
         startButton.addEventListener('click', () => {
             if (timer) clearTimeout(timer);
@@ -228,11 +245,6 @@
             
             showReadonlyScreen();
             
-            // Oculta el footer si la orientación es apaisada
-            if (window.matchMedia("(orientation: landscape) and (max-width: 767px)").matches) {
-                footer.classList.add('hidden');
-            }
-
             const minutes = parseInt(timerInput.value, 10);
             const milliseconds = minutes * 60 * 1000;
             
@@ -284,23 +296,16 @@
             readonlyContentTextArea.value = '';
             readonlySection.classList.add('hidden');
             wordCountDiv.classList.add('hidden');
+            // Muestra el footer y aplica la lógica de orientación
+            footer.style.display = 'block';
+            handleOrientationChange();
         });
-        
-        // --- Lógica para manejar el footer en modo apaisado ---
-        function handleFooterVisibility() {
-            if (window.matchMedia("(orientation: landscape) and (max-width: 767px)").matches) {
-                footer.classList.add('hidden');
-            } else {
-                footer.classList.remove('hidden');
-            }
-        }
 
-        // Se ejecuta al cargar la página
-        handleFooterVisibility();
-
-        // Se ejecuta cada vez que el tamaño o la orientación cambian
-        window.addEventListener("resize", handleFooterVisibility);
-        window.addEventListener("orientationchange", handleFooterVisibility);
+        // Add event listener for orientation change
+        window.addEventListener("orientationchange", handleOrientationChange);
+        window.addEventListener("resize", handleOrientationChange);
+        // Also call on load to set initial state
+        window.addEventListener("load", handleOrientationChange);
     </script>
 </body>
 </html>
